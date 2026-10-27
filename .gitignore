@@ -1,1 +1,13 @@
+coverage/
+doc/
+.yardoc/
 *.gem
+pkg/
+.bundle/
+vendor/bundle/
+.idea/
+.vscode/
+.private/
+.agents/
+.claude/
+.codex/

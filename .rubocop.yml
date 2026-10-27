@@ -1,0 +1,142 @@
+AllCops:
+  TargetRubyVersion: 3.2
+  NewCops: enable
+  SuggestExtensions: false
+
+# faithful port structure
+Metrics:
+  Enabled: false
+
+# faithful port structure
+Style/Documentation:
+  Enabled: false
+
+# faithful port structure
+Style/GuardClause:
+  Enabled: false
+
+# faithful port structure
+Style/Next:
+  Enabled: false
+
+# faithful port structure
+Style/IfUnlessModifier:
+  Enabled: false
+
+# faithful port structure
+Style/RedundantReturn:
+  Enabled: false
+
+# faithful port structure
+Style/NegatedIf:
+  Enabled: false
+
+# faithful port structure
+Style/NegatedIfElseCondition:
+  Enabled: false
+
+# faithful port structure
+Style/SoleNestedConditional:
+  Enabled: false
+
+# faithful port structure
+Style/ConditionalAssignment:
+  Enabled: false
+
+# faithful port structure
+Style/MultipleComparison:
+  Enabled: false
+
+# faithful port structure
+Style/NumericPredicate:
+  Enabled: false
+
+# faithful port structure
+Style/ZeroLengthPredicate:
+  Enabled: false
+
+# faithful port structure
+Style/HashSyntax:
+  EnforcedShorthandSyntax: never
+
+# faithful port structure
+Style/StringLiterals:
+  Enabled: false
+
+# faithful port structure
+Style/ClassVars:
+  Enabled: false
+
+# faithful port structure
+Style/OptionalBooleanParameter:
+  Enabled: false
+
+# faithful port structure
+Style/MutableConstant:
+  Enabled: false
+
+# faithful port structure
+Layout/LineLength:
+  Enabled: false
+
+# faithful port structure
+Layout/HashAlignment:
+  Enabled: false
+
+# faithful port structure
+Layout/ExtraSpacing:
+  Enabled: false
+
+# faithful port structure
+Layout/EmptyLinesAroundAttributeAccessor:
+  Enabled: false
+
+# faithful port structure
+Naming/VariableNumber:
+  Enabled: false
+
+# faithful port structure
+Naming/MethodParameterName:
+  Enabled: false
+
+# faithful port structure
+Naming/PredicatePrefix:
+  Enabled: false
+
+# faithful port structure
+Naming/AccessorMethodName:
+  Enabled: false
+
+# faithful port structure
+Naming/BlockForwarding:
+  Enabled: false
+
+# faithful port structure
+Layout/EmptyLines:
+  Enabled: false
+
+# faithful port structure
+Naming/PredicateMethod:
+  Enabled: false
+
+# `Helpers.fetch(url, options) { |response| }` is the port of the JS `fetch`, not `Hash#fetch`
+Lint/UselessDefaultValueArgument:
+  AllowedReceivers:
+    - Triauth::Helpers
+    - Helpers
+
+# the rescued variable keeps its triauth-js name (`err`, or `e` where the test uses it); faithful port structure
+Naming/RescuedExceptionsVariableName:
+  Enabled: false
+
+# faithful port structure
+Style/MapIntoArray:
+  Enabled: false
+
+# faithful port structure
+Style/InverseMethods:
+  Enabled: false
+
+# `raise Triauth::Error.new(validation_error)` is the port of `throw new TriauthError(validationError)`; faithful port structure
+Style/RaiseArgs:
+  Enabled: false

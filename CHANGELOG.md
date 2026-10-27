@@ -1,0 +1,56 @@
+# Changelog
+
+## [1.0.0.beta.4] - unreleased
+
+The port of triauth-js 1.0.0-beta.4 (e4223d2).
+
+### Added
+
+- `Triauth.validate` validates group names (`groupName`), lookup codes (`lookupCode`), and device tags (`deviceTag`).
+
+### Changed
+
+- Improve handling of unpaired surrogates and prototype-poisoning names in JSON.
+- JSON numbers must be safe integers.
+- Attestation entry that is `nil` is rejected with the error `invalid_attestations` at stage 1.
+- Error codes are strings (e.g., `request_denied`) in place of numbers. A validation error also has a `reason` (e.g., `too_long`). See [Error codes](README.md#error-codes).
+- `Triauth.whois` rejects a malformed `lookupCode` with the error `invalid_lookup_code`.
+- At stage 3, `Triauth.authenticate`, `ping`, `sign`, `stamp` and `attest` reject the stage-1 options (`ext`, `sessionKey`, `message`, `attachments`, `attestations`) with the error `invalid_arguments`.
+- `Triauth.check` reports a `deviceTag` outside the device-tag format as `{ valid: false, reason: 'revoked' }` without a DNS lookup.
+- The DNS-over-HTTPS resolvers compare the owner name of an answer without regard to ASCII case.
+- Unknown options of the `triauth` record are ignored. `Triauth.whois` reports its `mode`, `include` and `x-` options only.
+
+## [1.0.0.beta.3] - unreleased
+
+The port of triauth-js 1.0.0-beta.3 (ec21c04).
+
+### Added
+
+- Official support for compressed P-256 public keys in `es256` and `webauthn-es256` key records.
+
+### Changed
+
+- An `es256` or `webauthn-es256` key must be a 65-byte uncompressed point or a 33-byte compressed point. The library rejects all other forms, including the hybrid form that OpenSSL itself accepts.
+
+## [1.0.0.beta.2] - unreleased
+
+The port of triauth-js 1.0.0-beta.2 (9b146c1).
+
+### Added
+
+- Encrypted responses. Every challenge carries a P-256 public key (`ek`), the authenticator encrypts its response to it with HPKE (RFC 9180), and stage 3 decrypts it with the key kept in the stored challenge, which stage 1 now returns as `result[:challenge]` in the form `<challenge>.<key>`. Sign-ins need an authenticator that encrypts responses.
+- A `sessionKey` in every `Triauth.authenticate` result (`result[:sessionKey]`), derived by both sides from the encrypted response. `Triauth.ping`, `Triauth.sign`, `Triauth.stamp` and `Triauth.attest` take it as the `sessionKey` option in place of a `token`, and their requests travel encrypted under it as `skid` and `request`. After a delegated sign-in it starts with the actor's domain, and the requests go to the actor's authenticator.
+- The `ext.permissions` extension, `ext: { permissions: { ping: true, stamp: true } }`. Ping and stamp need their permission. Sign and attest need none, because the user approves each request.
+
+### Changed
+
+- The default `callbackMethod` is now `GET`.
+
+### Removed
+
+- The `pingToken`, `signToken`, `stampToken` and `attestToken` extensions, replaced by `ext.permissions`.
+- The `privateProfile` extension. The Triauth Authenticator no longer keeps a private profile and ignores a request for one.
+
+## [1.0.0.beta.1] - unreleased
+
+First beta of the official Ruby client library for the triauth protocol, a port of triauth-js 1.0.0-beta.1.

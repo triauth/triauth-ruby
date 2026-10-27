@@ -1,0 +1,79 @@
+name: CI pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    # Weekly run so newly-disclosed advisories surface without a commit.
+    - cron: "0 6 * * 1"
+  workflow_dispatch: {}
+
+# A newer commit on the same branch/PR supersedes in-flight runs.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: the whole pipeline only needs to read the repo.
+permissions:
+  contents: read
+
+jobs:
+  check-build:
+    name: Check & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+      - run: bundle exec rake lint
+      # The coverage run includes the live zone tests, which need a resolver that delivers large answers in full.
+      - uses: ./.github/actions/full-resolver
+      - run: bundle exec rake coverage
+      - run: bundle exec rake doc
+      - name: Build the gem and smoke-test it (installs and loads the API)
+        run: |
+          gem build triauth.gemspec
+          export GEM_HOME="$(mktemp -d)"
+          gem install --local --no-document triauth-*.gem
+          ruby -e 'require "triauth"; raise "gem entry broken" unless Triauth.respond_to?(:authenticate); puts "triauth #{Triauth::VERSION} loads"'
+
+  test:
+    name: Tests ubuntu-latest ruby-${{ matrix.ruby }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ["3.2", "3.3", "3.4", "4.0"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - uses: ./.github/actions/full-resolver
+      - name: Run all tests
+        run: bundle exec rake test
+
+  dependency-audit:
+    name: Development dependency security audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+        with:
+          ruby-version: "3.4"
+      # The gem has no runtime dependencies; this audits the pinned development tools in Gemfile.lock.
+      - name: Audit Gemfile.lock
+        run: |
+          gem install --no-document bundler-audit
+          bundle-audit check --update

@@ -4,20 +4,67 @@ on:
   push:
     tags: ["v*"]
 
+# Never cancel an in-flight release.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
 jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true # bundle install in deployment mode (Gemfile.lock must match the gemspec), cached
+      - name: Verify tag matches gem version
+        run: |
+          GEM="v$(ruby -Ilib -rtriauth/version -e 'print Triauth::VERSION')"
+          [ "$GEM" = "${GITHUB_REF_NAME}" ] || { echo "::error::tag ${GITHUB_REF_NAME} does not match Triauth::VERSION ${GEM}"; exit 1; }
+      - run: bundle exec rake lint
+      # `bundle exec rake coverage` includes the live zone tests, which need a resolver that delivers large answers in full.
+      - uses: ./.github/actions/full-resolver
+      - run: bundle exec rake coverage
+      - run: bundle exec rake doc
+      - name: Build and verify gem contents
+        run: |
+          gem build triauth.gemspec
+          GEM_FILE="triauth-${GITHUB_REF_NAME#v}.gem"
+          [ -e "$GEM_FILE" ] || { echo "::error::expected gem file missing: $GEM_FILE"; exit 1; }
+          tar -xOf "$GEM_FILE" data.tar.gz | tar -tzf - | sort | tee packaged-files.txt
+          for f in lib/triauth.rb lib/triauth/version.rb README.md LICENSE CHANGELOG.md; do
+            grep -qx "$f" packaged-files.txt || { echo "::error::expected packaged file missing: $f"; exit 1; }
+          done
+      - name: Smoke-test the built gem (installs and loads the API)
+        run: |
+          export GEM_HOME="$(mktemp -d)"
+          gem install --local --no-document "triauth-${GITHUB_REF_NAME#v}.gem"
+          ruby -e 'require "triauth"; raise "gem entry broken" unless Triauth.respond_to?(:authenticate); puts "triauth #{Triauth::VERSION} loads"'
+
   publish:
+    name: Publish to RubyGems
+    needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # OIDC for RubyGems trusted publishing
+      id-token: write # OIDC trusted publishing
     steps:
-      - uses: actions/checkout@v6
-      - uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ruby-version: "3.3"
-      - uses: rubygems/configure-rubygems-credentials@main
+          persist-credentials: false
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+        with:
+          ruby-version: "3.4"
+      # rubygems.org trusts this exact workflow (repository triauth/triauth-ruby, file release.yml,
+      # no environment) to publish the `triauth` gem. Renaming the file or adding an `environment:`
+      # breaks that match.
+      - uses: rubygems/configure-rubygems-credentials@dc5a8d8553e6ee01fc26761a49e99e733d17954a # v2.1.0
       - run: gem build triauth.gemspec
-      - run: gem push triauth-*.gem
+      - run: gem push "triauth-${GITHUB_REF_NAME#v}.gem"
