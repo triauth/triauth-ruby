@@ -126,7 +126,8 @@ module TestInternals
           Triauth::Logger::CONSOLE.warn('[triauth]', '[warn]', 'w', nil)
           Triauth::Logger::CONSOLE.error('[triauth]', '[error]', 'e', [1, 2])
         end
-        assert_equal "[triauth] [debug] d 1\n[triauth] [info] i {:k=>\"v\"}\n", out
+        # Hash#inspect prints {k: "v"} from Ruby 3.4 on and {:k=>"v"} before it
+        assert_equal "[triauth] [debug] d 1\n[triauth] [info] i #{{ k: 'v' }.inspect}\n", out
         assert_equal "[triauth] [warn] w nil\n[triauth] [error] e [1, 2]\n", err
       end
     end
