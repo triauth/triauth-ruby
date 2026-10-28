@@ -19,7 +19,7 @@ Try it live in the **[playground](https://play.triauth.org)**, or read more on *
 **Get started:**
 
 ```shell
-gem install triauth
+gem install triauth -v 1.0.0.beta.4
 ```
 
 > 📦 Ships as a **gem**, runs on **Ruby 3.2+**, and has **zero runtime dependencies**.
@@ -125,7 +125,7 @@ Complete runnable examples below:
 ### Ruby
 
 ```shell
-gem install triauth sinatra puma rackup
+gem install triauth:1.0.0.beta.4 sinatra puma rackup
 ```
 
 <details>
